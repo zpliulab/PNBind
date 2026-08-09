@@ -1,0 +1,29 @@
+{
+  "protocol": "fixed publication thresholds with per-chain prefix alignment",
+  "datasets": [
+    {
+      "name": "DNA_Test_129",
+      "data": "benchmarks/data/DNA-129_Test.txt",
+      "predictions": "benchmarks/predictions/per_chain_DNA_Test_129.npz",
+      "threshold": 0.58
+    },
+    {
+      "name": "DNA_Test_181",
+      "data": "benchmarks/data/DNA_Test_181.txt",
+      "predictions": "benchmarks/predictions/per_chain_DNA_Test_181.npz",
+      "threshold": 0.55
+    },
+    {
+      "name": "RNA_Test_117",
+      "data": "benchmarks/data/RNA-117_Test.txt",
+      "predictions": "benchmarks/predictions/per_chain_RNA_Test_117.npz",
+      "threshold": 0.40
+    },
+    {
+      "name": "RNA_Test_285",
+      "data": "benchmarks/data/RNA-285_Test.txt",
+      "predictions": "benchmarks/predictions/per_chain_RNA_Test_285.npz",
+      "threshold": 0.34
+    }
+  ]
+}

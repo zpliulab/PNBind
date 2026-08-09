@@ -1,0 +1,134 @@
+{
+  "format_version": 1,
+  "ensemble_rule": "unweighted mean of eight residue probabilities per task",
+  "checkpoints": [
+    {
+      "filename": "pnbind_dna_01.pt",
+      "task": "DNA",
+      "ensemble_index": 1,
+      "model_family": "hier_esm",
+      "size_bytes": 75763063,
+      "sha256": "56bca9a6a6a85b0669f6918840268b34cb3b10bcc5f8e817e89c21f37d25c42e"
+    },
+    {
+      "filename": "pnbind_dna_02.pt",
+      "task": "DNA",
+      "ensemble_index": 2,
+      "model_family": "hier_esm",
+      "size_bytes": 75763063,
+      "sha256": "e4018f4fc4b26cae35d5c53f3df0708008445f24e6d5e8f322d4913d1762b6e3"
+    },
+    {
+      "filename": "pnbind_dna_03.pt",
+      "task": "DNA",
+      "ensemble_index": 3,
+      "model_family": "hier_esm",
+      "size_bytes": 75763063,
+      "sha256": "ac31bf673593108a0050559f3a1778553f6f5e0a8a4b3d4d8751f6bf16504d5a"
+    },
+    {
+      "filename": "pnbind_dna_04.pt",
+      "task": "DNA",
+      "ensemble_index": 4,
+      "model_family": "hier_esm",
+      "size_bytes": 75763063,
+      "sha256": "ec812a689e19a14297d1858dff1e48918c98e9fc6b340ba5ab4183abf26cc454"
+    },
+    {
+      "filename": "pnbind_dna_05.pt",
+      "task": "DNA",
+      "ensemble_index": 5,
+      "model_family": "hier_esm",
+      "size_bytes": 75763063,
+      "sha256": "6ccce16f3b4bcd769b9a68073b6c05c3d2e4a1a330cb3e524cb680d159debc72"
+    },
+    {
+      "filename": "pnbind_dna_06.pt",
+      "task": "DNA",
+      "ensemble_index": 6,
+      "model_family": "hier_esm",
+      "size_bytes": 75763063,
+      "sha256": "18b733103fd7139ba331b4b8d8f0ae69dc128477ee0793f74e4d9a486fbc5f04"
+    },
+    {
+      "filename": "pnbind_dna_07.pt",
+      "task": "DNA",
+      "ensemble_index": 7,
+      "model_family": "hier_esm",
+      "size_bytes": 75763063,
+      "sha256": "815446067942cba4d7e6b172ef802d9f926d56219899d06eb05efb654c991f93"
+    },
+    {
+      "filename": "pnbind_dna_08.pt",
+      "task": "DNA",
+      "ensemble_index": 8,
+      "model_family": "hier_esm",
+      "size_bytes": 75763063,
+      "sha256": "fef8b14b1a68bed8a52ad01e06ca69c81b2001f8d258df5bc11ff8b2e74e44d4"
+    },
+    {
+      "filename": "pnbind_rna_01.pt",
+      "task": "RNA",
+      "ensemble_index": 1,
+      "model_family": "hier_esm",
+      "size_bytes": 75763063,
+      "sha256": "b96dffdc6d394c7e86e1d04fd5aa4a49fe80124656557366a189dfb7a7613551"
+    },
+    {
+      "filename": "pnbind_rna_02.pt",
+      "task": "RNA",
+      "ensemble_index": 2,
+      "model_family": "hier_esm",
+      "size_bytes": 75763063,
+      "sha256": "90409cc634bda519051f72e6e31dde6775b60ad4bb65e4d0337bf1aa9f6e7cac"
+    },
+    {
+      "filename": "pnbind_rna_03.pt",
+      "task": "RNA",
+      "ensemble_index": 3,
+      "model_family": "hier_esm",
+      "size_bytes": 75763063,
+      "sha256": "d763e133b7aba9b9a14990d28bfe1edf2f5cfb2d9c75f79472f484c5fc447c03"
+    },
+    {
+      "filename": "pnbind_rna_04.pt",
+      "task": "RNA",
+      "ensemble_index": 4,
+      "model_family": "hier_esm",
+      "size_bytes": 75763063,
+      "sha256": "b8a7d42d24007e76eb2f241d70a5af2d91f3460653d722433545fc218018f084"
+    },
+    {
+      "filename": "pnbind_rna_05.pt",
+      "task": "RNA",
+      "ensemble_index": 5,
+      "model_family": "surface_enhanced",
+      "size_bytes": 75958715,
+      "sha256": "786e4ec75d131aca806e8c5ade702c290018d617b4dde350575980235159cb7a"
+    },
+    {
+      "filename": "pnbind_rna_06.pt",
+      "task": "RNA",
+      "ensemble_index": 6,
+      "model_family": "surface_enhanced",
+      "size_bytes": 75958715,
+      "sha256": "f94c5cca25384b3e538dfb0984b46bb906dba7742e96f39b1bb67ed6b35cf371"
+    },
+    {
+      "filename": "pnbind_rna_07.pt",
+      "task": "RNA",
+      "ensemble_index": 7,
+      "model_family": "surface_enhanced",
+      "size_bytes": 75958715,
+      "sha256": "75015a606c1cc4e51f767e7246032f97f07b6bbf027be6ae97ed14e273034bf0"
+    },
+    {
+      "filename": "pnbind_rna_08.pt",
+      "task": "RNA",
+      "ensemble_index": 8,
+      "model_family": "surface_enhanced",
+      "size_bytes": 75958715,
+      "sha256": "3f0ffda1cd028c6e3215bcc67238f1572d8ccd45032d93760f801ab3926c6826"
+    }
+  ]
+}

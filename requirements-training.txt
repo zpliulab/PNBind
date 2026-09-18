@@ -1,0 +1,2 @@
+-r requirements-inference.txt
+torch-cluster==1.6.3

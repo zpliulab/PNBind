@@ -1,0 +1,31 @@
+{
+  "seed": 5002,
+  "model_family": "hier_esm",
+  "model_config": {
+    "node_scalar_dim": 1558,
+    "node_vector_dim": 2,
+    "edge_scalar_dim": 27,
+    "edge_vector_dim": 1,
+    "hidden_scalar_dim": 384,
+    "hidden_vector_dim": 8,
+    "num_layers": 4,
+    "num_ipa_layers": 1,
+    "dropout": 0.3,
+    "use_geo_feat": true,
+    "enable_geo_edge": false
+  },
+  "optimizer": {
+    "lr": 0.0001,
+    "weight_decay": 0.0003
+  },
+  "training": {
+    "batch_size": 1,
+    "epochs": 20,
+    "pos_weight": 2.3333333333,
+    "grad_clip_norm": 1.0,
+    "early_stopping_patience": 5,
+    "lr_scheduler_patience": 3,
+    "lr_decay_factor": 0.5,
+    "device": "cuda:0"
+  }
+}

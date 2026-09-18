@@ -16,8 +16,13 @@ def main() -> int:
         "README.md",
         "benchmarks/config.json",
         "checkpoints/manifest.json",
+        "configs/train_example.json",
+        "pnbind/training.py",
         "results/pnbind_expected.csv",
+        "requirements-training.txt",
+        "scripts/prepare_training_manifest.py",
         "scripts/reproduce_table2.py",
+        "scripts/train.py",
     )
     for relative in required:
         if not (ROOT / relative).is_file():

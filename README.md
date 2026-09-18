@@ -1,8 +1,8 @@
 # PNBind
 
-This repository contains the public inference and evaluation package for PNBind, a residue-level predictor of protein–nucleic-acid binding sites.
+This repository contains the public training, inference, and evaluation package for PNBind, a residue-level predictor of protein–nucleic-acid binding sites.
 
-The release is intentionally scoped like the MegSite public package: it provides test data, inference code, inference-only model weights, example precomputed features, and the artifacts needed to reproduce the reported benchmark values. Training code, optimizer state, training datasets, and the training recipe are not included.
+The release provides the model definitions, training loop, preprocessing-manifest utility, inference code, test data, inference-only model weights, example precomputed features, and the artifacts needed to reproduce the reported benchmark values. Optimizer state, server-local intermediate files, and full training checkpoints are not distributed.
 
 ## Reproduce the PNBind rows in Table 2
 
@@ -25,6 +25,34 @@ Expected four-decimal output:
 | RNA-Test-285 | 285 | 45,317 | 0.34 | 0.4161 | 0.4722 | 0.4894 | 0.4562 | 0.9400 | 0.8679 | 0.4438 |
 
 The script writes both the reproduced values and an explicit residue-alignment log under `results/`.
+
+## Train from precomputed graph features
+
+The training entry point is `scripts/train.py`. It instantiates the published PNBind model family, uses weighted binary cross-entropy, AdamW, ReduceLROnPlateau learning-rate scheduling, gradient clipping, early stopping, deterministic seeding, and best-validation-checkpoint saving. The complete default hyperparameter set is in `configs/train_example.json`.
+
+Training uses per-chain graph caches and ESM3 layer tensors rather than server-local paths. Each graph must contain the fields used by `pnbind.data.load_feature_graph`, including residue labels (`y`); each matching ESM3 layer file must contain `esm3_layers`. Build deterministic train/validation manifests from these public-format precomputed features:
+
+```bash
+pip install -r requirements-training.txt
+python scripts/prepare_training_manifest.py \
+  --graph-dir /path/to/train_graphs \
+  --esm3-layers-dir /path/to/train_esm3_layers \
+  --train-output manifests/train.jsonl \
+  --validation-output manifests/validation.jsonl \
+  --seed 5002
+```
+
+Run training with:
+
+```bash
+python scripts/train.py \
+  --config configs/train_example.json \
+  --train-manifest manifests/train.jsonl \
+  --validation-manifest manifests/validation.jsonl \
+  --output-dir runs/dna_seed5002
+```
+
+`runs/dna_seed5002/best.pt` contains the best validation checkpoint and `history.json` records the loss and learning-rate trajectory. The repository does not bundle the large, regenerable graph/PLM feature cache; benchmark source data can be obtained from the public benchmark providers, then converted to this documented feature format.
 
 ## Evaluation protocol
 
@@ -62,6 +90,8 @@ examples/                 two precomputed inference examples
 pnbind/models/            model definitions needed for inference
 results/                  expected and reproduced benchmark tables
 scripts/                  evaluation, download, verification, and inference CLIs
+configs/                  published training hyperparameters
+pnbind/training.py        training loop, loss, optimizer, scheduler, and checkpoint logic
 ```
 
 The four test files follow the three-line FASTA/label format distributed by the MegSite repository. The repository copy, filenames, and checksums are fixed in this release so that future upstream changes do not silently change the benchmark.
@@ -78,4 +108,4 @@ This checks required files, repository-size limits, accidental local paths or cr
 
 ## Availability boundary
 
-This release supports exact reproduction of the reported PNBind benchmark rows and checkpoint-level inference from the documented precomputed feature representation. It does not claim to reproduce model training, and it deliberately contains no training implementation or private training artifacts.
+This release supports exact reproduction of the reported PNBind benchmark rows, checkpoint-level inference, and retraining from the documented precomputed graph and ESM feature representation. It does not distribute server-local intermediate files, optimizer state, or full training checkpoints.

@@ -8,7 +8,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 
 from pnbind.checkpoints import MODEL_FAMILIES
@@ -58,28 +57,58 @@ class GraphManifestDataset(torch.utils.data.Dataset):
 class EpochMetrics:
     loss: float
     residues: int
+    f1: float
+    mcc: float
 
 
 def _node_logits(output: torch.Tensor | dict[str, torch.Tensor]) -> torch.Tensor:
     return output["node_logits"] if isinstance(output, dict) else output
 
 
-def _loss(logits: torch.Tensor, labels: torch.Tensor, pos_weight: float) -> torch.Tensor:
-    weight = torch.tensor(pos_weight, dtype=logits.dtype, device=logits.device)
-    return F.binary_cross_entropy_with_logits(logits, labels.float(), pos_weight=weight)
+class FocalLoss(torch.nn.Module):
+    """Binary focal loss used for the reported PNBind training procedure."""
+
+    def __init__(self, alpha: float = 0.30, gamma: float = 3.0):
+        super().__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+
+    def forward(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+        labels = labels.float()
+        bce = torch.nn.functional.binary_cross_entropy_with_logits(
+            logits, labels, reduction="none"
+        )
+        probability = torch.sigmoid(logits)
+        pt = torch.where(labels == 1, probability, 1 - probability)
+        alpha = torch.where(labels == 1, self.alpha, 1 - self.alpha)
+        return (alpha * (1 - pt).pow(self.gamma) * bce).mean()
+
+
+def _binary_metrics(logits: torch.Tensor, labels: torch.Tensor) -> tuple[float, float]:
+    predicted = logits >= 0
+    labels = labels.bool()
+    tp = int((predicted & labels).sum())
+    fp = int((predicted & ~labels).sum())
+    fn = int((~predicted & labels).sum())
+    tn = int((~predicted & ~labels).sum())
+    denominator = 2 * tp + fp + fn
+    f1 = 0.0 if denominator == 0 else 2 * tp / denominator
+    mcc_denominator = ((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)) ** 0.5
+    mcc = 0.0 if mcc_denominator == 0 else (tp * tn - fp * fn) / mcc_denominator
+    return f1, mcc
 
 
 def run_epoch(
     model: torch.nn.Module,
     loader: DataLoader,
     device: torch.device,
-    pos_weight: float,
     optimizer: torch.optim.Optimizer | None = None,
-    grad_clip_norm: float | None = None,
 ) -> EpochMetrics:
     training = optimizer is not None
     model.train(training)
     total_loss, total_residues = 0.0, 0
+    all_logits, all_labels = [], []
+    criterion = FocalLoss()
     for data in loader:
         data = data.to(device)
         if training:
@@ -89,16 +118,17 @@ def run_epoch(
             labels = data.y.reshape(-1)
             if logits.shape != labels.shape:
                 raise RuntimeError(f"logit/label shape mismatch: {logits.shape} vs {labels.shape}")
-            loss = _loss(logits, labels, pos_weight)
+            loss = criterion(logits, labels)
             if training:
                 loss.backward()
-                if grad_clip_norm is not None:
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip_norm)
                 optimizer.step()
         count = int(labels.numel())
         total_loss += float(loss.detach()) * count
         total_residues += count
-    return EpochMetrics(loss=total_loss / total_residues, residues=total_residues)
+        all_logits.append(logits.detach().cpu())
+        all_labels.append(labels.detach().cpu())
+    f1, mcc = _binary_metrics(torch.cat(all_logits), torch.cat(all_labels))
+    return EpochMetrics(loss=total_loss / total_residues, residues=total_residues, f1=f1, mcc=mcc)
 
 
 def train(
@@ -108,7 +138,7 @@ def train(
     output_dir: str | Path,
 ) -> Path:
     """Train one PNBind model and return the best validation checkpoint path."""
-    required = {"seed", "model_family", "model_config", "optimizer", "training"}
+    required = {"model_family", "model_config", "optimizer", "training"}
     missing = required - set(config)
     if missing:
         raise ValueError(f"training config missing {sorted(missing)}")
@@ -116,7 +146,8 @@ def train(
     if family not in MODEL_FAMILIES:
         raise ValueError(f"unknown model_family {family!r}")
 
-    seed_everything(int(config["seed"]))
+    if "seed" in config:
+        seed_everything(int(config["seed"]))
     training_cfg = config["training"]
     if int(training_cfg.get("batch_size", 1)) != 1:
         raise ValueError("batch_size must be 1 because ESM layer tensors are chain-shaped")
@@ -131,40 +162,41 @@ def train(
         lr=float(opt_cfg["lr"]),
         weight_decay=float(opt_cfg["weight_decay"]),
     )
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer,
-        mode="min",
-        factor=float(training_cfg.get("lr_decay_factor", 0.5)),
-        patience=int(training_cfg.get("lr_scheduler_patience", 3)),
-    )
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     best_path = output / "best.pt"
-    best_loss, stale_epochs = float("inf"), 0
+    best_f1, best_mcc, stale_epochs = -1.0, -1.0, 0
     history = []
     for epoch in range(1, int(training_cfg["epochs"]) + 1):
         train_metrics = run_epoch(
-            model, train_loader, device, float(training_cfg["pos_weight"]), optimizer,
-            float(training_cfg["grad_clip_norm"]),
+            model, train_loader, device, optimizer,
         )
         validation_metrics = run_epoch(
-            model, validation_loader, device, float(training_cfg["pos_weight"]),
+            model, validation_loader, device,
         )
-        scheduler.step(validation_metrics.loss)
         history.append({
             "epoch": epoch,
             "train_loss": train_metrics.loss,
             "validation_loss": validation_metrics.loss,
-            "learning_rate": optimizer.param_groups[0]["lr"],
+            "validation_f1": validation_metrics.f1,
+            "validation_mcc": validation_metrics.mcc,
         })
-        if validation_metrics.loss < best_loss:
-            best_loss, stale_epochs = validation_metrics.loss, 0
+        # Validation F1 is primary; MCC resolves exact F1 ties.
+        improved = (validation_metrics.f1 > best_f1) or (
+            validation_metrics.f1 == best_f1 and validation_metrics.mcc > best_mcc
+        )
+        if improved:
+            best_f1, best_mcc, stale_epochs = validation_metrics.f1, validation_metrics.mcc, 0
             torch.save({
                 "format_version": 1,
                 "model_family": family,
                 "model_config": config["model_config"],
                 "state_dict": model.state_dict(),
-                "training_metadata": {"epoch": epoch, "validation_loss": best_loss, "config": config},
+                "training_metadata": {
+                    "epoch": epoch,
+                    "validation_f1": best_f1,
+                    "validation_mcc": best_mcc,
+                },
             }, best_path)
         else:
             stale_epochs += 1

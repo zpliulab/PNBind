@@ -28,7 +28,7 @@ The script writes both the reproduced values and an explicit residue-alignment l
 
 ## Train from precomputed graph features
 
-The training entry point is `scripts/train.py`. It instantiates the published PNBind model family, uses weighted binary cross-entropy, AdamW, ReduceLROnPlateau learning-rate scheduling, gradient clipping, early stopping, deterministic seeding, and best-validation-checkpoint saving. The complete default hyperparameter set is in `configs/train_example.json`.
+The training entry point is `scripts/train.py`. As described in the manuscript, it uses focal loss and AdamW (`lr=3e-4`, `weight_decay=1e-4`), processes one protein per batch, monitors validation F1 and MCC each epoch, and stops after 15 consecutive epochs without improvement. The training configuration is in `configs/train_example.json`.
 
 Training uses per-chain graph caches and ESM3 layer tensors rather than server-local paths. Each graph must contain the fields used by `pnbind.data.load_feature_graph`, including residue labels (`y`); each matching ESM3 layer file must contain `esm3_layers`. Build deterministic train/validation manifests from these public-format precomputed features:
 
@@ -38,8 +38,7 @@ python scripts/prepare_training_manifest.py \
   --graph-dir /path/to/train_graphs \
   --esm3-layers-dir /path/to/train_esm3_layers \
   --train-output manifests/train.jsonl \
-  --validation-output manifests/validation.jsonl \
-  --seed 5002
+  --validation-output manifests/validation.jsonl
 ```
 
 Run training with:
@@ -49,10 +48,10 @@ python scripts/train.py \
   --config configs/train_example.json \
   --train-manifest manifests/train.jsonl \
   --validation-manifest manifests/validation.jsonl \
-  --output-dir runs/dna_seed5002
+  --output-dir runs/dna
 ```
 
-`runs/dna_seed5002/best.pt` contains the best validation checkpoint and `history.json` records the loss and learning-rate trajectory. The repository does not bundle the large, regenerable graph/PLM feature cache; benchmark source data can be obtained from the public benchmark providers, then converted to this documented feature format.
+`runs/dna/best.pt` contains the selected checkpoint and `history.json` records training and validation metrics. The repository does not bundle the large, regenerable graph/PLM feature cache; benchmark source data can be obtained from the public benchmark providers, then converted to this documented feature format.
 
 ## Evaluation protocol
 
